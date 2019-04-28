@@ -1,0 +1,120 @@
+---
+title: "Practical Machine Learning Final Assignment"
+author: Lisa Doelger
+date: 4/25/2019
+output: html_document
+---
+
+
+## Overview of Assignment
+
+For this assignment we were asked to use the Weight Lifting Exercise Dataset to predict the classe variable or the way in which six participants completed a barbell exercise. In this assignment I will be explaining the following (taken straight from the assignment):  
+  -how I built my model  
+  -how I used cross validation  
+  -what I think the expected the out of sample error is  
+  -why I made the choices I did 
+
+### Packages
+
+My first step was to install the packages needed to complete the assignment. I wanted to be able to see skew and kurtosis of all the variables in one list, so I included the psych package. 
+
+```{r}
+library(ggplot2)
+library(lattice)
+library(caret)
+library(psych)
+```
+
+### Upload training data & examine file
+
+My next step was to bring in the training dataset, and take a look at it using summary, structure, and head functions. (I'm not including the code below for viewing the data to save on space.) 
+
+I noticed right away that a number of the 160 variables had values of blank or NA for the majority of the observations (n=19,216 or more than 99% of the data). Upon further exploration I noticed these variables with high missingness were missing for obs with a value of no for new_window. I also noticed the variables with high missingness were summary statistics of other variables (skewness, kurtosis, max, min, etc.). I include a couple of examples in the code below.
+
+I loaded the testing dataset to take a peek at the fields. The same fields with high missingness in the training dataset were completely missing in the testing dataset. I made the decision to remove the fields with high or complete missingness in both datasets, and removed the new_window value of yes rows in the training set (since these rows represent the summary of other rows).
+
+I also made the decision to remove a few other fields. I removed the first column because it was simply a count of the rows. I removed raw_timestamp_part_1 and raw_timestamp_part_2, and instead kept cvtd_timestamp. I removed new_window since it no longer provided any variation. I then set the testing data-set to the side until the end of the project. 
+
+```{r data}
+training = read.csv("~/Desktop/pml-training.csv")
+summary(training$new_window)
+summary(training$max_roll_belt)
+
+testing = read.csv("~/Desktop/pml-testing.csv")
+       
+training2 <- training[training$new_window=="no",c(2,5,7:11,37:49,60:68,84:86,102,113:124,140,151:160)]
+testing2 <- testing[,c(2,5,7:11,37:49,60:68,84:86,102,113:124,140,151:159)]
+```
+
+### Data Exploration
+
+Before starting any modeling, I explored the variables in the training dataset to begin to understand their properties, how they relate to each other, and how they relate to the outcome, classe. I looked at qplots and histograms. I looked at the scales of the different variables. I looked to see which, if any, variables were highly correlated. I looked for missing data, and outliers. I confirmed the outcome variable, classe, was a factor. From all of this, I made the following decisions:  
+  - Some of the variables were on different scales, so I would be sure to center and scale predictors as they are entered into models.  
+  - I would start my model with all variables, and also try pca to see if I could reduce the number of predictors while also evaluating if variables could be dropped.  
+  - There was no variation by user_name across class so I removed user_name.  
+  - There was variation across classe by cvtd_timestamp so I would keep cvtd_timestamp.  
+  - Since classe is a factor with multiple levels, the algorithms I would test were multinomial regression (multinom), random forest (rf), and boosting (gbm).  
+  - There was no missing data so no need to address. There were a few candidates for outliers, but I would run my models first and readdress if I ran into any issues with model fit.
+  - I would be sure to use k-fold cross-validation on the training dataset in order to estimate out of sample error.
+
+```{r ECHO=FALSE}
+qplot(cvtd_timestamp, classe, data=training2)
+```
+
+### K-Fold Cross-Validation
+
+My next step was to set-up my cross validation. I decided to use 5 folds since it falls within the range of number of folds typically used for modeling (three to ten). I used a seed to ensure the same cases are assigned to train and test within each fold across all of my models. 
+
+```{r}
+set.seed(333)
+data_ctrl <- trainControl(method = "cv", number =5)
+```
+
+### Model Runs
+
+The six models I ran are listed below:  
+  - Multinomial Regression  
+  - Multinomial Regression with PCA  
+  - Random Forest  
+  - Random Forest with PCA  
+  - Boosting  
+  - Boosting with PCA
+  
+I made sure to set the same seed before each model run to allow for an apple to apple comparison of the models. 
+```{r}
+set.seed(333)
+model_one <- train(classe~., data=training2, trControl=data_ctrl, method="multinom", preProcess=c("center","scale"))
+model_one
+
+set.seed(333)
+model_two <- train(classe~., data=training2, trControl=data_ctrl, method = "multinom", preProcess = c("center", "scale", "pca"))
+model_two
+
+set.seed(333)
+model_three <- train(classe~., data=training2, trControl=data_ctrl, method="rf", preProcess=c("center", "scale"))
+model_three
+
+set.seed(333)
+model_four <- train(classe~., data=training2, trControl=data_ctrl, method="rf", preProcess=c("center", "scale","pca"))
+model_four
+
+set.seed(333)
+model_five <- train(classe~., data=training2, trControl=data_ctrl, method="gbm", preProcess=c("center", "scale"))
+model_five
+
+set.seed(333)
+model_six <- train(classe~., data=training2, trControl=data_ctrl, method="gbm", preProcess=c("center", "scale","pca"))
+model_six
+```
+
+After my model runs, I compared their accuracy on the hold-out data from my 5-fold cross-validation in order to estimate out of sample error, and determine the best fit to the data. Interestingly the PCA models all performed worse than the models that used the center and scaled predictors. Out of all the models, the random forest model performed best with an extremely high accuracy of 99% and an out of sample error of <1%.With such a high accuracy and out of sample error using this method, I decided to move forward with the random forest as the final model. 
+
+### Predictions on the Test Dataset
+
+My final step was to use the random forest model to predict the classe variable in the test dataset. 
+
+```{r}
+pred <- predict(model_three, testing2)
+pred
+```
+
