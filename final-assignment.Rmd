@@ -11,7 +11,7 @@ output: html_document
 For this assignment we were asked to use the Weight Lifting Exercise Dataset to predict the classe variable or the way in which six participants completed a barbell exercise. In this assignment I will be explaining the following (taken straight from the assignment):  
   -how I built my model  
   -how I used cross validation  
-  -what I think the expected the out of sample error is  
+  -what I think the expected out of sample error is  
   -why I made the choices I did 
 
 ### Packages
@@ -54,7 +54,7 @@ Before starting any modeling, I explored the variables in the training dataset t
   - There was no variation by user_name across class so I removed user_name.  
   - There was variation across classe by cvtd_timestamp so I would keep cvtd_timestamp.  
   - Since classe is a factor with multiple levels, the algorithms I would test were multinomial regression (multinom), random forest (rf), and boosting (gbm).  
-  - There was no missing data so no need to address. There were a few candidates for outliers, but I would run my models first and readdress if I ran into any issues with model fit.
+  - There was no missing data so no need to address. There were a few candidates for outliers, but I would run my models first and readdress if I ran into any issues with model fit.  
   - I would be sure to use k-fold cross-validation on the training dataset in order to estimate out of sample error.
 
 ```{r ECHO=FALSE}
@@ -63,7 +63,7 @@ qplot(cvtd_timestamp, classe, data=training2)
 
 ### K-Fold Cross-Validation
 
-My next step was to set-up my cross validation. I decided to use 5 folds since it falls within the range of number of folds typically used for modeling (three to ten). I used a seed to ensure the same cases are assigned to train and test within each fold across all of my models. 
+My next step was to set-up my cross validation. I decided to use 5 folds since it falls within the range of number of folds typically used for modeling (three to ten). I used a seed to ensure the same cases were assigned to train and test within each fold across all of my models. 
 
 ```{r}
 set.seed(333)
@@ -107,7 +107,7 @@ model_six <- train(classe~., data=training2, trControl=data_ctrl, method="gbm", 
 model_six
 ```
 
-After my model runs, I compared their accuracy on the hold-out data from my 5-fold cross-validation in order to estimate out of sample error, and determine the best fit to the data. Interestingly the PCA models all performed worse than the models that used the center and scaled predictors. Out of all the models, the random forest model performed best with an extremely high accuracy of 99% and an out of sample error of <1%.With such a high accuracy and out of sample error using this method, I decided to move forward with the random forest as the final model. 
+After my model runs, I compared their accuracy on the hold-out data from my 5-fold cross-validation in order to estimate out of sample error, and determine the best fit to the data. Interestingly the PCA models all performed worse than the models that used the center and scaled predictors. Out of all the models, the random forest model performed best with an extremely high accuracy of 99.8647% and an out of sample error of 0.1353%.With such a high accuracy and out of sample error using this method, I decided to move forward with the random forest as the final model. 
 
 ### Predictions on the Test Dataset
 
