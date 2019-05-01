@@ -18,7 +18,7 @@ For this assignment we were asked to use the Weight Lifting Exercise Dataset to 
 
 My first step was to install the packages needed to complete the assignment. I wanted to be able to see skew and kurtosis of all the variables in one list, so I included the psych package. 
 
-```{r}
+```{r results="hide", message=FALSE, warnings=FALSE}
 library(ggplot2)
 library(lattice)
 library(caret)
@@ -81,32 +81,39 @@ The six models I ran are listed below:
   - Boosting with PCA
   
 I made sure to set the same seed before each model run to allow for an apple to apple comparison of the models. 
-```{r}
+```{r results="hide", message=FALSE, warning=FALSE}
 set.seed(333)
 model_one <- train(classe~., data=training2, trControl=data_ctrl, method="multinom", preProcess=c("center","scale"))
-model_one
+
 
 set.seed(333)
 model_two <- train(classe~., data=training2, trControl=data_ctrl, method = "multinom", preProcess = c("center", "scale", "pca"))
-model_two
+
 
 set.seed(333)
 model_three <- train(classe~., data=training2, trControl=data_ctrl, method="rf", preProcess=c("center", "scale"))
-model_three
+
 
 set.seed(333)
 model_four <- train(classe~., data=training2, trControl=data_ctrl, method="rf", preProcess=c("center", "scale","pca"))
-model_four
+
 
 set.seed(333)
 model_five <- train(classe~., data=training2, trControl=data_ctrl, method="gbm", preProcess=c("center", "scale"))
-model_five
+
 
 set.seed(333)
 model_six <- train(classe~., data=training2, trControl=data_ctrl, method="gbm", preProcess=c("center", "scale","pca"))
+
+```
+```{r echo=FALSE}
+model_one
+model_two
+model_three
+model_four
+model_five
 model_six
 ```
-
 After my model runs, I compared their accuracy on the hold-out data from my 5-fold cross-validation in order to estimate out of sample error, and determine the best fit to the data. Interestingly the PCA models all performed worse than the models that used the center and scaled predictors. Out of all the models, the random forest model performed best with an extremely high accuracy of 99.8647% and an out of sample error of 0.1353%.With such a high accuracy and out of sample error using this method, I decided to move forward with the random forest as the final model. 
 
 ### Predictions on the Test Dataset
